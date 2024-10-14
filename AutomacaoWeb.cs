@@ -1,10 +1,12 @@
 ﻿using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 using System.Text;
-using System.Threading.Tasks;
+using System.Diagnostics;
+using System.Threading;
+using Newtonsoft.Json.Linq;
+using System.Linq;
 
 namespace Robo
 {
@@ -15,46 +17,115 @@ namespace Robo
         public AutomacaoWeb()
         {
             driver = new ChromeDriver();
-            driver.Manage().Window.Maximize();
         }
 
         public void AbrirSite()
         {
+            driver.Navigate().GoToUrl("https://www.4devs.com.br/gerador_de_pessoas");
+            Thread.Sleep(2000);
+            FecharCookie();
+
+            driver.FindElement(By.Id("txt_qtde")).Clear();
+            Thread.Sleep(2000);
+            driver.FindElement(By.Id("txt_qtde")).SendKeys("10");
+            Thread.Sleep(2000);
+            driver.FindElement(By.Id("bt_gerar_pessoa")).Click();
+            Thread.Sleep(2000);
+            driver.FindElement(By.XPath("//*[@id='area_resposta_json']/div/button[1]")).Click();
+            Thread.Sleep(2000);
+
+            SalvarDadosEmCSV();
+        }
+
+        public void FecharCookie()
+        {
+            driver.FindElement(By.Id("cookiescript_close")).Click();
+        }
+
+        public void SalvarDadosEmCSV()
+        {
+            string downloadFolderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+
+            var latestJsonFile = Directory.GetFiles(downloadFolderPath, "*.json")
+                                          .Select(f => new FileInfo(f))
+                                          .OrderByDescending(f => f.LastWriteTime)
+                                          .FirstOrDefault();
+
+            if (latestJsonFile == null)
+            {
+                Console.WriteLine("Nenhum arquivo JSON encontrado na pasta Downloads.");
+                return;
+            }
+
+            string csvFilePath = Path.Combine(Environment.CurrentDirectory, "PessoasGeradas.csv");
+
             try
             {
-                driver.Navigate().GoToUrl("https://www.4devs.com.br/gerador_de_pessoas");
+                string jsonData = File.ReadAllText(latestJsonFile.FullName);
+                JArray pessoas = JArray.Parse(jsonData);
 
-                driver.FindElement(By.Id("txt_qtde")).Clear();
+                using (StreamWriter writer = new StreamWriter(csvFilePath, false, Encoding.UTF8))
+                {
+                    writer.WriteLine("Nome;Idade;CPF;RG;Data de Nascimento;Sexo;Signo;Mãe;Pai;Email;Senha;CEP;Endereço;Número;Bairro;Cidade;Estado;Telefone Fixo;Celular;Altura;Peso;Tipo Sanguíneo");
 
-                driver.FindElement(By.Id("txt_qtde")).SendKeys("10");
+                    foreach (var pessoa in pessoas)
+                    {
+                        string nome = (string)pessoa["nome"];
+                        int idade = (int)pessoa["idade"];
+                        string cpf = (string)pessoa["cpf"];
+                        string rg = (string)pessoa["rg"];
+                        string dataNascimento = (string)pessoa["data_nasc"];
+                        string sexo = (string)pessoa["sexo"];
+                        string signo = (string)pessoa["signo"];
+                        string mae = (string)pessoa["mae"];
+                        string pai = (string)pessoa["pai"];
+                        string email = (string)pessoa["email"];
+                        string senha = (string)pessoa["senha"];
+                        string cep = (string)pessoa["cep"];
+                        string endereco = (string)pessoa["endereco"];
+                        string numero = (string)pessoa["numero"];
+                        string bairro = (string)pessoa["bairro"];
+                        string cidade = (string)pessoa["cidade"];
+                        string estado = (string)pessoa["estado"];
+                        string telefoneFixo = (string)pessoa["telefone_fixo"];
+                        string celular = (string)pessoa["celular"];
+                        string altura = (string)pessoa["altura"];
+                        float peso = (float)pessoa["peso"];
+                        string tipoSanguineo = (string)pessoa["tipo_sanguineo"];
 
-                driver.FindElement(By.Id("cookiescript_aceppt")).Click();
+                        writer.WriteLine($"{nome};{idade};{cpf};{rg};{dataNascimento};{sexo};{signo};{mae};{pai};{email};{senha};{cep};{endereco};{numero};{bairro};{cidade};{estado};{telefoneFixo};{celular};{altura};{peso};{tipoSanguineo}");
+                    }
+                }
 
-                driver.FindElement(By.Id("bt_gerar_pessoa")).Click();
-            }
-            catch (NoSuchElementException ex)
-            {
-                Console.WriteLine("Elemento não encontrado: " + ex.Message);
-            }
-            catch (WebDriverException ex)
-            {
-                Console.WriteLine("Erro relacionado ao WebDriver: " + ex.Message);
+                Console.WriteLine($"Dados salvos em: {csvFilePath}");
+                AbrirArquivo(csvFilePath); // Chama o método para abrir o arquivo
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Ocorreu um erro: " + ex.Message);
+                Console.WriteLine($"Erro ao processar o arquivo JSON: {ex.Message}");
             }
-            finally
-            {
-                
-                if (driver != null)
-                {
-                    driver.FindElement(By.Id("cookiescript_aceppt")).Click();
+        }
 
-                    driver.FindElement(By.Id("bt_gerar_pessoa")).Click();
-                }
+        private void AbrirArquivo(string filePath)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo()
+                {
+                    FileName = filePath,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erro ao abrir o arquivo: {ex.Message}");
             }
         }
     }
 }
+
+
+
+
+
 

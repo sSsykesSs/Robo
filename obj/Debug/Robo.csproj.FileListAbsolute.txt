@@ -31,3 +31,5 @@ C:\Users\rayan\source\repos\Robo\Robo\obj\Debug\Robo.csproj.CoreCompileInputs.ca
 C:\Users\rayan\source\repos\Robo\Robo\obj\Debug\Robo.csproj.CopyComplete
 C:\Users\rayan\source\repos\Robo\Robo\obj\Debug\Robo.exe
 C:\Users\rayan\source\repos\Robo\Robo\obj\Debug\Robo.pdb
+C:\Users\rayan\source\repos\Robo\Robo\bin\Debug\Newtonsoft.Json.dll
+C:\Users\rayan\source\repos\Robo\Robo\bin\Debug\Newtonsoft.Json.xml
