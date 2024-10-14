@@ -24,7 +24,10 @@ namespace Robo
             driver.Navigate().GoToUrl("https://www.4devs.com.br/gerador_de_pessoas");
             Thread.Sleep(2000);
             FecharCookie();
+        }
 
+        public void PreencherSite()
+        {
             driver.FindElement(By.Id("txt_qtde")).Clear();
             Thread.Sleep(2000);
             driver.FindElement(By.Id("txt_qtde")).SendKeys("10");
@@ -39,19 +42,28 @@ namespace Robo
 
         public void FecharCookie()
         {
-            driver.FindElement(By.Id("cookiescript_close")).Click();
+            try
+            {
+                driver.FindElement(By.Id("cookiescript_close")).Click();
+
+                PreencherSite();
+            }
+            catch
+            {
+                PreencherSite();
+            }
         }
 
         public void SalvarDadosEmCSV()
         {
-            string downloadFolderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+            string arquivo = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
 
-            var latestJsonFile = Directory.GetFiles(downloadFolderPath, "*.json")
+            var ultimojson = Directory.GetFiles(arquivo, "*.json")
                                           .Select(f => new FileInfo(f))
                                           .OrderByDescending(f => f.LastWriteTime)
                                           .FirstOrDefault();
 
-            if (latestJsonFile == null)
+            if (ultimojson == null)
             {
                 Console.WriteLine("Nenhum arquivo JSON encontrado na pasta Downloads.");
                 return;
@@ -61,7 +73,7 @@ namespace Robo
 
             try
             {
-                string jsonData = File.ReadAllText(latestJsonFile.FullName);
+                string jsonData = File.ReadAllText(ultimojson.FullName);
                 JArray pessoas = JArray.Parse(jsonData);
 
                 using (StreamWriter writer = new StreamWriter(csvFilePath, false, Encoding.UTF8))
@@ -71,7 +83,7 @@ namespace Robo
                     foreach (var pessoa in pessoas)
                     {
                         string nome = (string)pessoa["nome"];
-                        int idade = (int)pessoa["idade"];
+                        string idade = (string)pessoa["idade"];
                         string cpf = (string)pessoa["cpf"];
                         string rg = (string)pessoa["rg"];
                         string dataNascimento = (string)pessoa["data_nasc"];
@@ -90,7 +102,7 @@ namespace Robo
                         string telefoneFixo = (string)pessoa["telefone_fixo"];
                         string celular = (string)pessoa["celular"];
                         string altura = (string)pessoa["altura"];
-                        float peso = (float)pessoa["peso"];
+                        string peso = (string)pessoa["peso"];
                         string tipoSanguineo = (string)pessoa["tipo_sanguineo"];
 
                         writer.WriteLine($"{nome};{idade};{cpf};{rg};{dataNascimento};{sexo};{signo};{mae};{pai};{email};{senha};{cep};{endereco};{numero};{bairro};{cidade};{estado};{telefoneFixo};{celular};{altura};{peso};{tipoSanguineo}");
@@ -98,7 +110,7 @@ namespace Robo
                 }
 
                 Console.WriteLine($"Dados salvos em: {csvFilePath}");
-                AbrirArquivo(csvFilePath); // Chama o método para abrir o arquivo
+                AbrirArquivo(csvFilePath); 
             }
             catch (Exception ex)
             {
